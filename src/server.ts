@@ -1,45 +1,63 @@
 import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 
-// Load environment variables
-dotenv.config();
+import { env, validateEnv } from './config/env.js';
+import apiRouter from './routes/index.js';
+import { notFoundHandler, globalErrorHandler } from './middleware/error.middleware.js';
 
+// ── Validate environment on startup ────────────────────────────────
+validateEnv();
+
+// ── Express app ────────────────────────────────────────────────────
 const app = express();
-const PORT = process.env.PORT || 5000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Security Middleware: Helmet helps secure the app by setting various HTTP headers
+// ── Security Middleware ────────────────────────────────────────────
 app.use(helmet());
 
-// CORS Middleware: Enable Cross-Origin Resource Sharing
+// ── CORS Middleware ────────────────────────────────────────────────
 app.use(cors());
 
-// Body Parser Middleware: Parse incoming JSON requests
+// ── Body Parser Middleware ─────────────────────────────────────────
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Logger Middleware: HTTP request logger (Morgan)
-if (NODE_ENV === 'development') {
+// ── Logger Middleware ──────────────────────────────────────────────
+if (env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 } else {
   app.use(morgan('combined'));
 }
 
-// Health Check Route
-app.get('/health', (req: Request, res: Response) => {
+// ── Health Check ───────────────────────────────────────────────────
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
-    status: 'success',
+    success: true,
+    statusCode: 200,
     message: 'FitTrack API is healthy and running',
-    environment: NODE_ENV,
+    data: {
+      environment: env.NODE_ENV,
+      uptime: `${Math.floor(process.uptime())}s`,
+    },
     timestamp: new Date().toISOString(),
   });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`[server]: FitTrack API is running at http://localhost:${PORT}`);
-  console.log(`[server]: Environment: ${NODE_ENV}`);
+// ── API Routes (v1) ───────────────────────────────────────────────
+app.use('/api/v1', apiRouter);
+
+// ── 404 Handler (must come AFTER routes) ──────────────────────────
+app.use(notFoundHandler);
+
+// ── Global Error Handler (must be the LAST middleware) ─────────────
+app.use(globalErrorHandler);
+
+// ── Start Server ──────────────────────────────────────────────────
+app.listen(env.PORT, () => {
+  console.log(`\n🏋️  FitTrack API`);
+  console.log(`   ├─ URL:         http://localhost:${env.PORT}`);
+  console.log(`   ├─ Environment: ${env.NODE_ENV}`);
+  console.log(`   └─ Routes:      /api/v1/auth, /api/v1/users, /api/v1/stats\n`);
 });
