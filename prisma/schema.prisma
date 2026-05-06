@@ -1,0 +1,108 @@
+// ─────────────────────────────────────────────────────────────────
+//  FitTrack — Prisma Schema (MongoDB)
+// ─────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────────────────
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum ActivityLevel {
+  SEDENTARY
+  LIGHTLY_ACTIVE
+  MODERATELY_ACTIVE
+  VERY_ACTIVE
+  EXTRA_ACTIVE
+}
+
+// ── User Model ─────────────────────────────────────────────────────
+// Maps to the 5-step onboarding flow:
+//   Step 1 → email, password, name
+//   Step 2 → dateOfBirth, gender, height, weight
+//   Step 3 → goals[]
+//   Step 4 → activityLevel
+//   Step 5 → username, bio, avatarUrl
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ── Step 1: Account Basics ──────────────────────────────────────
+  email    String @unique
+  password String // bcrypt hash — never store plaintext
+  name     String
+
+  // ── Step 2: Physical Profile ────────────────────────────────────
+  dateOfBirth DateTime? // nullable until onboarding step 2
+  gender      Gender?
+  height      Float? // in cm
+  weight      Float? // in kg
+
+  // ── Step 3 & 4: Goals & Activity ────────────────────────────────
+  goals         String[] // e.g. ["LOSE_WEIGHT", "BUILD_MUSCLE"]
+  activityLevel ActivityLevel?
+
+  // ── Step 5: Social Profile ──────────────────────────────────────
+  username  String? @unique
+  bio       String?
+  avatarUrl String?
+
+  // ── Metadata ────────────────────────────────────────────────────
+  onboardingComplete Boolean @default(false)
+
+  // ── Relations ───────────────────────────────────────────────────
+  stats DashboardStats[]
+
+  @@map("users")
+}
+
+// ── Dashboard Stats Model ──────────────────────────────────────────
+// Stores periodic fitness snapshots linked to a User.
+// Each record represents a single day's tracked data.
+
+model DashboardStats {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ── Core Fitness Metrics ────────────────────────────────────────
+  caloriesBurned  Int   @default(0)
+  caloriesGoal    Int   @default(2000)
+  workoutsCount   Int   @default(0) // workouts completed this period
+  workoutMinutes  Int   @default(0) // total minutes exercised
+  stepsCount      Int   @default(0)
+  stepsGoal       Int   @default(10000)
+  waterIntakeMl   Int   @default(0)
+  waterGoalMl     Int   @default(2500)
+  sleepHours      Float @default(0)
+  sleepGoalHours  Float @default(8)
+
+  // ── Body Metrics (point-in-time snapshot) ────────────────────────
+  weight Float? // in kg, tracks progress over time
+  bmi    Float?
+
+  // ── Date Tracking ───────────────────────────────────────────────
+  date DateTime // the calendar day this record covers
+
+  // ── User Relation ───────────────────────────────────────────────
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // ── Indexes ─────────────────────────────────────────────────────
+  @@unique([userId, date]) // one stats record per user per day
+  @@map("dashboard_stats")
+}
