@@ -103,3 +103,17 @@ export async function existsByEmail(email: string): Promise<boolean> {
   const count = await prisma.user.count({ where: { email } });
   return count > 0;
 }
+
+/**
+ * Find a user by username, excluding the password hash.
+ * Used during onboarding Step 5 to check username availability.
+ *
+ * @returns The safe user or null if not found
+ */
+export async function findUserByUsername(username: string): Promise<SafeUser | null> {
+  return prisma.user.findUnique({
+    where: { username },
+    select: safeUserSelect,
+  }) as Promise<SafeUser | null>;
+}
+
