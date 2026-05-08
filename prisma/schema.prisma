@@ -1,14 +1,14 @@
 // ─────────────────────────────────────────────────────────────────
-//  FitTrack — Prisma Schema (MongoDB)
+//  FitTrack — Prisma Schema (PostgreSQL)
 // ─────────────────────────────────────────────────────────────────
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "./generated/prisma"
 }
 
 datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
 }
 
 // ── Enums ──────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ enum ActivityLevel {
 //   Step 5 → username, bio, avatarUrl
 
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -75,7 +75,7 @@ model User {
 // Each record represents a single day's tracked data.
 
 model DashboardStats {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -96,13 +96,14 @@ model DashboardStats {
   bmi    Float?
 
   // ── Date Tracking ───────────────────────────────────────────────
-  date DateTime // the calendar day this record covers
+  date DateTime @db.Date // the calendar day this record covers
 
   // ── User Relation ───────────────────────────────────────────────
-  userId String @db.ObjectId
+  userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // ── Indexes ─────────────────────────────────────────────────────
   @@unique([userId, date]) // one stats record per user per day
+  @@index([userId])
   @@map("dashboard_stats")
 }

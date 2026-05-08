@@ -1,17 +1,23 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+
+import { validate } from '../middleware/validation.middleware.js';
+import { signupSchema } from '../types/auth.types.js';
+import * as AuthController from '../controllers/auth.controller.js';
 import { sendSuccess } from '../utils/response.js';
 
 const router = Router();
 
 /**
- * @route   POST /api/v1/auth/register
- * @desc    Register a new user
+ * @route   POST /api/v1/auth/signup
+ * @desc    Register a new user (Onboarding Step 1)
  * @access  Public
+ *
+ * Pipeline:
+ *   1. validate(signupSchema) — Zod validates & sanitises body
+ *   2. AuthController.signup  — hashes pw, creates user, returns JWT
  */
-router.post('/register', (req: Request, res: Response) => {
-  sendSuccess(res, 201, 'Registration endpoint ready — controller pending');
-});
+router.post('/signup', validate(signupSchema), AuthController.signup);
 
 /**
  * @route   POST /api/v1/auth/login

@@ -1,5 +1,5 @@
 import { prisma } from '../config/prisma.js';
-import type { Prisma, DashboardStats } from '@prisma/client';
+import type { Prisma, DashboardStats } from '../../prisma/generated/prisma/client.js';
 
 /**
  * Dashboard Stats Repository
