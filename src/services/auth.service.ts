@@ -6,7 +6,7 @@ import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 import * as UserRepository from '../repositories/user.repository.js';
 import type { SafeUser } from '../repositories/user.repository.js';
-import type { SignupInput, AuthPayload } from '../types/auth.types.js';
+import type { SignupInput, LoginInput, AuthPayload } from '../types/auth.types.js';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -57,6 +57,36 @@ export async function register(input: SignupInput): Promise<AuthPayload> {
   const token = signToken(user.id);
 
   // Strip password before returning
+  const safeUser = stripPassword(user);
+
+  return { user: safeUser, token };
+}
+
+/**
+ * Authenticate a user (Login).
+ *
+ * Flow:
+ *  1. Find user by email (include password hash).
+ *  2. If not found or password doesn't match, throw 401.
+ *  3. Generate JWT and return AuthPayload.
+ *
+ * @throws {AppError} 401 on invalid credentials
+ */
+export async function login(input: LoginInput): Promise<AuthPayload> {
+  // ── 1. Find user ───────────────────────────────────────────────
+  const user = await UserRepository.findUserByEmail(input.email);
+  if (!user) {
+    throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+  }
+
+  // ── 2. Verify password ─────────────────────────────────────────
+  const isValidPassword = await bcrypt.compare(input.password, user.password);
+  if (!isValidPassword) {
+    throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+  }
+
+  // ── 3. Generate JWT ────────────────────────────────────────────
+  const token = signToken(user.id);
   const safeUser = stripPassword(user);
 
   return { user: safeUser, token };

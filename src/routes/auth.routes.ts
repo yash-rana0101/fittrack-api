@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 
 import { validate } from '../middleware/validation.middleware.js';
-import { signupSchema } from '../types/auth.types.js';
+import { signupSchema, loginSchema } from '../types/auth.types.js';
 import * as AuthController from '../controllers/auth.controller.js';
 import { sendSuccess } from '../utils/response.js';
 
@@ -24,9 +24,7 @@ router.post('/signup', validate(signupSchema), AuthController.signup);
  * @desc    Login user & return JWT
  * @access  Public
  */
-router.post('/login', (req: Request, res: Response) => {
-  sendSuccess(res, 200, 'Login endpoint ready — controller pending');
-});
+router.post('/login', validate(loginSchema), AuthController.login);
 
 /**
  * @route   POST /api/v1/auth/logout

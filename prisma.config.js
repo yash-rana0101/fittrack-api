@@ -11,10 +11,8 @@ import { defineConfig } from 'prisma/config';
 export default defineConfig({
     earlyAccess: true,
     schema: './prisma/schema.prisma',
-    migrate: {
-        async resolve({ datasourceUrl }) {
-            return datasourceUrl ?? process.env.DATABASE_URL;
-        },
+    datasource: {
+        url: process.env.DATABASE_URL,
     },
 });
 //# sourceMappingURL=prisma.config.js.map
