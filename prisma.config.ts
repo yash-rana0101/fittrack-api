@@ -14,9 +14,8 @@ import { defineConfig } from 'prisma/config';
  * `ssl: { rejectUnauthorized: false }` for runtime queries.
  */
 export default defineConfig({
-  earlyAccess: true,
   schema: './prisma/schema.prisma',
   datasource: {
-    url: process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL!,
   },
 });
