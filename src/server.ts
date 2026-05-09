@@ -15,7 +15,8 @@ validateEnv();
 const app = express();
 
 // ── Security Middleware ────────────────────────────────────────────
-app.use(helmet());
+// eslint-disable-next-next-line @typescript-eslint/no-explicit-any
+app.use((helmet as any)());
 
 // ── CORS Middleware ────────────────────────────────────────────────
 app.use(cors());
