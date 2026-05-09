@@ -8,7 +8,15 @@ import { defineConfig } from 'prisma/config';
  * schema.prisma and into this config file. This gives us
  * programmatic control over the connection (e.g. per-environment
  * overrides, secrets from vaults, etc.).
+ *
+ * Note: SSL (`?sslmode=require` in DATABASE_URL) is required for
+ * Supabase. The pg.Pool in src/config/prisma.ts also sets
+ * `ssl: { rejectUnauthorized: false }` for runtime queries.
  */
 export default defineConfig({
+  earlyAccess: true,
   schema: './prisma/schema.prisma',
+  datasource: {
+    url: process.env.DATABASE_URL,
+  },
 });

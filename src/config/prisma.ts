@@ -25,7 +25,10 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient(): PrismaClient {
-  const pool = new pg.Pool({ connectionString: env.DATABASE_URL });
+  const pool = new pg.Pool({
+    connectionString: env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }, // required for Supabase (TLS)
+  });
   const adapter = new PrismaPg(pool);
 
   return new PrismaClient({
